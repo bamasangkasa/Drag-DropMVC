@@ -1,0 +1,146 @@
+﻿@{
+  Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width" />
+  <title>Index</title>
+  <link href="~/Content/bootstrap.min.css" rel="stylesheet" />
+  <script src="~/Scripts/jquery-2.1.4.min.js"></script>
+  <style>
+    #filedrag {
+      /*display: none;*/
+      font-weight: bold;
+      text-align: center;
+      padding: 1em 0;
+      margin: 1em 0;
+      color: #555;
+      border: 2px dashed #555;
+      border-radius: 7px;
+      cursor: default;
+    }
+
+      #filedrag.hover {
+        color: #f00;
+        border-color: #f00;
+        border-style: solid;
+        box-shadow: inset 0 3px 4px;
+      }
+  </style>
+  <script>
+    $(document).ready(function () {
+      UploadFile.AddEventListenerForDragAndDrop();
+      UploadFile.AddEventListenerForFileSelect();
+    });
+
+    function UploadFile() { }
+
+    // file drag hover
+    UploadFile.FileDragHover = function (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      e.target.className = (e.type == "dragover" ? "hover" : "");
+    }
+
+    // file selection
+    UploadFile.FileSelectHandler = function (e) {
+      // cancel event and hover styling
+      UploadFile.FileDragHover(e);
+
+      //if from drag and drop then reset file select
+      if (e.dataTransfer != undefined &&
+          e.dataTransfer.files != undefined) {
+        UploadFile.ResetFileSelect();
+      }
+
+      // fetch FileList object
+      var files = e.target.files || e.dataTransfer.files;
+
+      if (files != undefined && files.length > 0) {
+        UploadFile.UploadFileToServer(files[0]);
+      }
+    }
+    //Adds Event Listeners for drag drop div
+    UploadFile.AddEventListenerForDragAndDrop = function () {
+      var fileDrag = $("#filedrag");
+
+      // call initialization file
+      if (window.File && window.FileList && window.FileReader) {
+        // is XHR2 available?
+        var xhr = new XMLHttpRequest();
+        if (xhr.upload) {
+
+          // file drop
+          // fileDrag[0].addEventListener("ondragstart", UploadFile.FileDragHover, false);
+          // fileDrag[0].addEventListener("ondragenter", UploadFile.FileDragHover, false);
+          // fileDrag[0].addEventListener("ondragover", UploadFile.FileDragHover, false);
+          // fileDrag[0].addEventListener("ondragleave", UploadFile.FileDragHover, false);
+          // fileDrag[0].addEventListener("drop", UploadFile.FileSelectHandler, false);
+
+          //Works like this too!!!!
+          fileDrag[0].ondragstart = UploadFile.FileDragHover;
+          fileDrag[0].ondragenter = UploadFile.FileDragHover;
+          fileDrag[0].ondragover = UploadFile.FileDragHover;
+          fileDrag[0].ondragleave = UploadFile.FileDragHover;
+          fileDrag[0].ondrop = UploadFile.FileSelectHandler;
+
+        }
+      }
+      else {
+        fileDrag.innerHTML = '<p>File Drag and Drop not Supported </p>';
+      }
+    }
+
+    UploadFile.AddEventListenerForFileSelect = function () {
+      var fileselect = $("#fileselect");
+      // file select
+      fileselect[0].addEventListener("change", UploadFile.FileSelectHandler, false);
+    }
+
+    //Resets File Select
+    UploadFile.ResetFileSelect = function () {
+      $("#fileselect").replaceWith('<input type="file" id="fileselect" name="fileselect[]" class="form-control" />');
+      UploadFile.AddEventListenerForFileSelect();
+    }
+
+    //--------- Upload Functions ------- //
+    UploadFile.UploadFileToServer = function (file) {
+      var formdata = new FormData();
+      formdata.append(file.name, file);
+      $.ajax({
+        url: '/Home/UploadHandler',
+        type: 'POST',
+        data: formdata,
+        contentType: false,
+        processData: false,
+        async: true,
+        success: function (data) {
+          alert(data.success);
+        },
+        error: function (error) {
+          alert('error');
+        }
+      });
+    }
+  </script>
+</head>
+<body>
+  <div>
+    <form id="uploadform" class="form-horizontal" role="form" onsubmit="return false;">
+      <fieldset>
+        <legend>Upload File</legend>
+        <div class="form-group">
+          <label for="fileselect" style="margin-top: 1%; text-align:right;" class="col-sm-2 control-label">Files to upload:</label>
+          <div class="col-sm-10">
+            <input type="file" id="fileselect" style="margin-top: 1%;" name="fileselect[]" class="form-control" />
+            <div id="filedrag" style="margin-top: 3%;">or Drop Files Here</div>
+          </div>
+        </div>
+      </fieldset>
+    </form>
+  </div>
+</body>
+</html>
